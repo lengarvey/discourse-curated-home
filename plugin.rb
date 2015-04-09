@@ -3,12 +3,11 @@
 # version: 0.1
 # authors: Benjamin Kampmann
 
-
 register_asset "javascripts/curated_home.js"
 register_asset "curated_home_style.scss"
 
 after_initialize do
-    require_dependency File.expand_path('../integrate.rb', __FILE__)
+  require_dependency File.expand_path('../integrate.rb', __FILE__)
 end
 
 

@@ -1,33 +1,45 @@
-
 # add our curated list
 module CuratedTopicQuery
-    def list_curated
-        on_home = TopicCustomField.where("name = 'is_on_home' AND value = 'true'")
-        return list_latest unless on_home.first
+  def list_curated
+    on_home = TopicCustomField.where("name = 'is_on_home' AND value = 'true'")
+    return list_latest unless on_home.first
 
-        create_list(:curated, :topic_ids => on_home.pluck(:topic_id))
-    end
+    create_list(:curated, :topic_ids => on_home.pluck(:topic_id))
+  end
 end
 
 module AddTopicCreatedBy
-    def self.included(base)
-        base.attributes :created_by
-    end
-    def created_by
-        BasicUserSerializer.new(object.user, scope: scope, root: false)
-    end
-    def include_excerpt?
-        pinned || object.custom_fields["is_on_home"]
-    end
+  def self.included(base)
+    base.attributes :created_by
+  end
+
+  def created_by
+    BasicUserSerializer.new(object.user, scope: scope, root: false)
+  end
+
+  def include_excerpt?
+    pinned || object.custom_fields["is_on_home"]
+  end
+end
+
+module AddFirstPostCooked
+  def self.included(base)
+    base.attributes :first_post_cooked
+  end
+
+  def first_post_cooked
+    object.posts.first.cooked
+  end
 end
 
 module AddTopicIsOnHome
-    def self.included(base)
-        base.attributes :is_on_home
-    end
-    def is_on_home
-        object.topic.custom_fields["is_on_home"] || false
-    end
+  def self.included(base)
+    base.attributes :is_on_home
+  end
+
+  def is_on_home
+    object.topic.custom_fields["is_on_home"] || false
+  end
 end
 
 module AddCustomFieldUpdater
@@ -51,10 +63,11 @@ end
 
 TopicViewSerializer.send(:include, AddTopicIsOnHome)
 TopicListItemSerializer.send(:include, AddTopicCreatedBy)
+TopicListItemSerializer.send(:include, AddFirstPostCooked)
 TopicsController.send(:include, AddCustomFieldUpdater)
 TopicQuery.send(:include, CuratedTopicQuery)
 
 
 Discourse::Application.routes.append do
-    put "t/:slug/:topic_id/custom_field" => "topics#custom_field", constraints: {topic_id: /\d+/}
+  put "t/:slug/:topic_id/custom_field" => "topics#custom_field", constraints: {topic_id: /\d+/}
 end
